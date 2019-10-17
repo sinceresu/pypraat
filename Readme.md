@@ -1,6 +1,6 @@
 # PyPratt_Clip
 
-      Pratt like python tool specially adapted for keyword clipping.
+      A pratt like python tool specially adapted for keyword clipping.
 ---------------------
 
 ## Requirement
@@ -10,10 +10,10 @@
 
 ## Features
 
-    *  Pratt UI like；
-    *  output Pratt compatible textgrid files；
+    *  pratt UI like；
+    *  output pratt compatible textgrid files；
     *  can browse and operate many audio files in a list widget smoothly.
-    *  convinient clipping operations；
+    *  convinient clipping operations thanks to the hot keys；
     *  support total operation history .
 
 ## Hot Keys
@@ -28,4 +28,4 @@
 ## To Do
 
     *   enhance robustness when parsing directory and textgrid files;
-    *   accelerate line real time displaying of playing progress line；
+    *   accelerate real time displaying of playing progress line；
