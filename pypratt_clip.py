@@ -257,9 +257,24 @@ class KeywordClip(object) :
         self. tree.item(str(selected_file_id), values=(new_item_value))
 
         os.remove(self.file_items[selected_file_id].file_path)
-        
+        if selected_file_id == self.first_unprocessed_file_id :
+            self.find_next_unprocessed_item()
+
         self.tree.yview_scroll(1, what='unit')
         self.goto_next_item()
+
+    def find_next_unprocessed_item(self) :
+        i = self.first_unprocessed_item_id + 1
+        while i <  len(self.displayed_ids)  :
+            if not self.file_items[self.displayed_ids[i]].command :
+                self.first_unprocessed_file_id = self.displayed_ids[i]
+                self.first_unprocessed_item_id = i
+                break
+            i += 1
+
+        if i == len(self.displayed_ids) :
+            self.first_unprocessed_file_id = None
+            self.first_unprocessed_item_id = None
 
     def on_confirm(self, *args):
         recorder = TextGridRecorder()
@@ -289,19 +304,7 @@ class KeywordClip(object) :
         self.file_items[selected_file_id].command = {"status": status, 'timezones':time_zones}
 
         if  selected_file_id  == self.first_unprocessed_file_id  :
-
-            i = self.first_unprocessed_item_id + 1
-            while i <  len(self.displayed_ids)  :
-                if not self.file_items[self.displayed_ids[i]].command :
-                    self.first_unprocessed_file_id = self.displayed_ids[i]
-                    self.first_unprocessed_item_id = i
-                    break
-                i += 1
-
-            if i == len(self.displayed_ids) :
-                self.first_unprocessed_file_id = None
-                self.first_unprocessed_item_id = None
-
+            self.find_next_unprocessed_item()
 
         self.update_progress()
 
@@ -418,7 +421,7 @@ class KeywordClip(object) :
             self.src_folder_ctrl.set(src_data_folder)
             self.app_config['src_folder'] = src_data_folder
             self.save_config( self.app_config)
-        self.load_dir(src_data_folder)
+            self.load_dir(src_data_folder)
 
     def on_select_item(self, *args) :
         self.update_view()
@@ -472,18 +475,21 @@ class KeywordClip(object) :
 
     @staticmethod
     def find_wav(data_dir) :
-            wav_files = []  
-            for (dirpath, _, filenames) in os.walk(data_dir):  
-                for filename in filenames:  
-                    if filename.endswith('.wav') or filename.endswith('.WAV'):  
-                        filename_path = os.sep.join([dirpath, filename])  
-                        wav_files.append(filename_path) 
+            wav_files = [] 
+            if data_dir:
+                for (dirpath, _, filenames) in os.walk(data_dir):  
+                    for filename in filenames:  
+                        if filename.endswith('.wav') or filename.endswith('.WAV'):  
+                            filename_path = os.sep.join([dirpath, filename])  
+                            wav_files.append(filename_path) 
             return wav_files
 
     def load_dir(self, data_dir):
 
         file_paths = self.find_wav(data_dir)
-
+        if not file_paths :
+            return
+            
         self.file_items = []
 
         records_map = self.load_status(data_dir) 
