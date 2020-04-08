@@ -29,7 +29,7 @@ class FileItem() :
         self.command = command
         self.base_file_name = os.path.basename(file_path)
 
-class PypraatClip(object) : 
+class Pypraat(object) : 
     statuses = [
         'clipped',
         'unclipped',
@@ -120,7 +120,7 @@ class PypraatClip(object) :
         Label(self.root,text='select status: ').grid(column=5, row=0, padx=20, pady=8)   
         self.detected_label_to_search = StringVar()
         detected_search_ctrl = ttk.Combobox(self.root, width=12, textvariable=self.detected_label_to_search, state='readonly')
-        detected_search_ctrl['values'] = PypraatClip.search_labels
+        detected_search_ctrl['values'] = Pypraat.search_labels
         detected_search_ctrl.grid(column=6, row=0, padx=20, pady=8) 
         detected_search_ctrl.current(0) 
         detected_search_ctrl.bind("<<ComboboxSelected>>",  self.on_status_search_selected)
@@ -382,9 +382,9 @@ class PypraatClip(object) :
     UPDATE_PROGRESS_INTERVAL_MS = int(UPDATE_PROGRESS_INTERVAL * 1000)
     #     self.goto_next_item()
     def update_play_progress(self) :
-        self.play_time  += PypraatClip.UPDATE_PROGRESS_INTERVAL
+        self.play_time  += Pypraat.UPDATE_PROGRESS_INTERVAL
         if self.play_time < self.play_end_time - 0.1 :
-            self.root.after(PypraatClip.UPDATE_PROGRESS_INTERVAL_MS, self.update_play_progress)
+            self.root.after(Pypraat.UPDATE_PROGRESS_INTERVAL_MS, self.update_play_progress)
             self.plotter_.plot_progress(self.play_time)
         else :
             self.plotter_.remove_progress()
@@ -412,7 +412,7 @@ class PypraatClip(object) :
         # self.timer.start()
         # self.plotter_.plot_progress(self.play_time)
 
-        self.wait_id = self.root.after(PypraatClip.UPDATE_PROGRESS_INTERVAL_MS, self.update_play_progress)
+        self.wait_id = self.root.after(Pypraat.UPDATE_PROGRESS_INTERVAL_MS, self.update_play_progress)
         sa.play_buffer(audio_data[start_position:end_position], num_channels = 1, bytes_per_sample = 2, sample_rate = fs)
 
 
@@ -550,23 +550,23 @@ class PypraatClip(object) :
     def load_config(self) :
         app_config = {}
 
-        if  not os.path.exists(PypraatClip.config_file_name) :
+        if  not os.path.exists(Pypraat.config_file_name) :
             app_config['src_folder'] = ''
             return app_config
 
-        with open(PypraatClip.config_file_name, 'r') as json_file :
+        with open(Pypraat.config_file_name, 'r') as json_file :
             json_data = json.loads(json_file.read())
             app_config['src_folder'] = json_data.get('src_folder', '')
 
         return app_config
 
     def save_config(self, app_config) :
-        with open(PypraatClip.config_file_name, 'w') as json_file :
+        with open(Pypraat.config_file_name, 'w') as json_file :
             json.dump(app_config, json_file, ensure_ascii=False)
         
 
 def main():
-    speech_purger = PypraatClip()
+    speech_purger = Pypraat()
     speech_purger.run()
 
 

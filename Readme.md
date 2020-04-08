@@ -1,4 +1,4 @@
-# PyPraat_Clip
+# PyPraat
 
       A praat like python tool specially adapted for keyword clipping.
 ---------------------
