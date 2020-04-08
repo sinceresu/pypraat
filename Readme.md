@@ -1,6 +1,6 @@
-# PyPratt_Clip
+# PyPraat_Clip
 
-      A pratt like python tool specially adapted for keyword clipping.
+      A praat like python tool specially adapted for keyword clipping.
 ---------------------
 
 ## Requirement
