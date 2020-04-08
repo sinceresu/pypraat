@@ -7,6 +7,9 @@ __author__ = 'Andy Su'
 
 import numpy as np
 import matplotlib.pyplot as plt
+from python_speech_features import fbank
+import librosa
+
 from global_defs import TimeZone
 
 class Plotter(object):
@@ -77,6 +80,14 @@ class Plotter(object):
         axes.plot(xaxis_array, audio, '')
 
         # axes.set_title('Audio')
+    def get_pcen(self, audio, sr, frame_step) :
+            fbe, _ = fbank(audio, samplerate=sr, winlen=0.025, winstep=frame_step, nfilt=80, nfft=512)
+        # Magnitude spectra (nfilt x nframe)
+            mag_spec = np.transpose(np.sqrt(fbe/2))
+            zi = np.reshape(mag_spec[:,0], (-1,1))
+            pcen_s = librosa.pcen(mag_spec, sr=sr, hop_length=int(frame_step*sr), zi=zi)   
+            pcen_s = np.transpose(pcen_s)
+            return pcen_s   
 
     def plot_specgram(self, audio, sr) :
         axes  = self.specgram_axes
@@ -86,8 +97,13 @@ class Plotter(object):
         self.specgram_progress_line = None
         self.specgram_zone_span = None
 
-        axes.specgram(audio, Fs=sr, scale_by_freq=True, sides='default')  # 绘制频谱
-
+        # axes.specgram(audio, Fs=sr, scale_by_freq=True, sides='default')  # 绘制频谱
+        PCEN_STEP = 0.01
+        pcen = self.get_pcen(audio, sr, PCEN_STEP)
+        sample_interval = PCEN_STEP #ms
+        xaxis_array = np.arange(pcen.shape[0] + 1) * sample_interval
+        yaxis_array = np.arange(pcen.shape[1] + 1)
+        axes.pcolormesh(xaxis_array, yaxis_array, np.transpose(pcen))
 
         axes.set_xlim(self.xlim)
         # axes.set_title('Specgram')

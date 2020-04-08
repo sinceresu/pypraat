@@ -29,7 +29,7 @@ class FileItem() :
         self.command = command
         self.base_file_name = os.path.basename(file_path)
 
-class KeywordClip(object) : 
+class PypraatClip(object) : 
     statuses = [
         'clipped',
         'unclipped',
@@ -58,7 +58,7 @@ class KeywordClip(object) :
         self.play_obj  = None
         
         self.root=Tk()
-        self.root.wm_title('keyword clip')
+        self.root.wm_title('pypraat clip')
 
         screen_width, screen_height = self.root.winfo_screenwidth(), self.root.winfo_screenheight()
         self.root.geometry('%dx%d+%d+%d' % (screen_width, screen_height, 0, 0))
@@ -120,7 +120,7 @@ class KeywordClip(object) :
         Label(self.root,text='select status: ').grid(column=5, row=0, padx=20, pady=8)   
         self.detected_label_to_search = StringVar()
         detected_search_ctrl = ttk.Combobox(self.root, width=12, textvariable=self.detected_label_to_search, state='readonly')
-        detected_search_ctrl['values'] = KeywordClip.search_labels
+        detected_search_ctrl['values'] = PypraatClip.search_labels
         detected_search_ctrl.grid(column=6, row=0, padx=20, pady=8) 
         detected_search_ctrl.current(0) 
         detected_search_ctrl.bind("<<ComboboxSelected>>",  self.on_status_search_selected)
@@ -165,6 +165,9 @@ class KeywordClip(object) :
     def update_selected_label(self):
 
         selected_file_id = self.get_selected_item()
+        if selected_file_id is None:
+            return 
+
         item_value = self.tree.item(str(selected_file_id),"values")
         new_item_value = (item_value[0],  item_value[1],  item_value[2])
         self. tree.item(str(selected_file_id), values=(new_item_value))
@@ -252,11 +255,17 @@ class KeywordClip(object) :
 
     def on_delete_file(self, *args):
         selected_file_id = self.get_selected_item()
+        if selected_file_id is None :
+            return 
         item_value = self.tree.item(str(selected_file_id),"values")
         new_item_value = (item_value[0], 'deleted',  item_value[2])
         self. tree.item(str(selected_file_id), values=(new_item_value))
 
         os.remove(self.file_items[selected_file_id].file_path)
+        textgrid_file_path =os.path.splitext(os.path.basename(self.file_items[selected_file_id].file_path))[0] + '.textgrid'
+        if os.path.exists(textgrid_file_path) :
+            os.remove(textgrid_file_path)
+
         if selected_file_id == self.first_unprocessed_file_id :
             self.find_next_unprocessed_item()
 
@@ -281,6 +290,8 @@ class KeywordClip(object) :
 
         time_zones = self.plotter_.get_timezones()
         selected_file_id = self.get_selected_item()
+        if selected_file_id is None :
+            return 
 
         if not self.file_items[selected_file_id].command :
             self.processed_items += 1
@@ -291,7 +302,7 @@ class KeywordClip(object) :
         status = 'clipped' if len(time_zones) > 1 else 'unclipped'
 
         if (len(time_zones) % 2) == 0:
-            print ("the number of  time zones  must be 1 or 3!")  
+            print ("the number of  time zones  must be odd!")  
             status = 'wrong'  
 
         new_item_value = (item_value[0], status,  item_value[2])
@@ -339,6 +350,9 @@ class KeywordClip(object) :
 
     def  goto_prev_item(self) :
         selected_file_id = self.get_selected_item()
+        if selected_file_id is None :
+            return
+
         prev_item = self. tree.prev(str(selected_file_id))
         if prev_item :
             self.tree.selection_set(prev_item)
@@ -353,6 +367,9 @@ class KeywordClip(object) :
     def  goto_next_item(self) :
 
         selected_file_id = self.get_selected_item()
+        if selected_file_id is None :
+            return        
+            
         next_item = self. tree.next(str(selected_file_id))
         if next_item :
             self.tree.selection_set(next_item)
@@ -365,9 +382,9 @@ class KeywordClip(object) :
     UPDATE_PROGRESS_INTERVAL_MS = int(UPDATE_PROGRESS_INTERVAL * 1000)
     #     self.goto_next_item()
     def update_play_progress(self) :
-        self.play_time  += KeywordClip.UPDATE_PROGRESS_INTERVAL
+        self.play_time  += PypraatClip.UPDATE_PROGRESS_INTERVAL
         if self.play_time < self.play_end_time - 0.1 :
-            self.root.after(KeywordClip.UPDATE_PROGRESS_INTERVAL_MS, self.update_play_progress)
+            self.root.after(PypraatClip.UPDATE_PROGRESS_INTERVAL_MS, self.update_play_progress)
             self.plotter_.plot_progress(self.play_time)
         else :
             self.plotter_.remove_progress()
@@ -395,7 +412,7 @@ class KeywordClip(object) :
         # self.timer.start()
         # self.plotter_.plot_progress(self.play_time)
 
-        self.wait_id = self.root.after(KeywordClip.UPDATE_PROGRESS_INTERVAL_MS, self.update_play_progress)
+        self.wait_id = self.root.after(PypraatClip.UPDATE_PROGRESS_INTERVAL_MS, self.update_play_progress)
         sa.play_buffer(audio_data[start_position:end_position], num_channels = 1, bytes_per_sample = 2, sample_rate = fs)
 
 
@@ -405,6 +422,8 @@ class KeywordClip(object) :
 
     def on_play(self, *args):
         selected_file_id = self.get_selected_item()
+        if selected_file_id is None :
+            return        
         self.play_audio(self.file_items[selected_file_id].file_path)
 
     def on_delete_timezone(self, *args):
@@ -440,8 +459,6 @@ class KeywordClip(object) :
         if selected_file_id is None :
             return 
 
-        # self. selected_label_ctrl.current(KeywordClip.keywords_to_id[self.file_items[selected_file_id].raw_label])
-        # self.detected_label.set(self.file_items[selected_file_id].raw_label)
 
         self.update_progress()
 
@@ -455,6 +472,8 @@ class KeywordClip(object) :
     def update_figure(self):
         # try:
         selected_file_id = self.get_selected_item()
+        if selected_file_id is None:
+            return
 
         self.draw_wav_data(self.file_items[selected_file_id].file_path, None if self.file_items[selected_file_id].command is None else self.file_items[selected_file_id].command['timezones'])
 
@@ -520,7 +539,9 @@ class KeywordClip(object) :
 
     def get_selected_item(self) :
         selection = self.tree.focus()
-        return  int(selection)
+        if selection :
+            return  int(selection)
+        return None
 
 
     def run(self) :
@@ -529,23 +550,23 @@ class KeywordClip(object) :
     def load_config(self) :
         app_config = {}
 
-        if  not os.path.exists(KeywordClip.config_file_name) :
+        if  not os.path.exists(PypraatClip.config_file_name) :
             app_config['src_folder'] = ''
             return app_config
 
-        with open(KeywordClip.config_file_name, 'r') as json_file :
+        with open(PypraatClip.config_file_name, 'r') as json_file :
             json_data = json.loads(json_file.read())
             app_config['src_folder'] = json_data.get('src_folder', '')
 
         return app_config
 
     def save_config(self, app_config) :
-        with open(KeywordClip.config_file_name, 'w') as json_file :
+        with open(PypraatClip.config_file_name, 'w') as json_file :
             json.dump(app_config, json_file, ensure_ascii=False)
         
 
 def main():
-    speech_purger = KeywordClip()
+    speech_purger = PypraatClip()
     speech_purger.run()
 
 
