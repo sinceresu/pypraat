@@ -22,9 +22,9 @@ class TextGridRecorder(object) :
                         textgrid_files.append(filename_path) 
             return textgrid_files
 
-    def write_textgrid(self,  file_path, time_zones) :
+    def write_textgrid(self,  file_path, time_zones,  tier_name = 'registered') :
         tg = textgrid.TextGrid()
-        tier = textgrid.IntervalTier('kws')
+        tier = textgrid.IntervalTier(tier_name)
         for i, time_zone in enumerate(time_zones) :
             tier.add(time_zone.start, time_zone.end, str(i))
         tg.append(tier)
@@ -49,7 +49,7 @@ class TextGridRecorder(object) :
             interval = TimeZone(float(item.minTime), float(item.maxTime))
             intervals.append(interval)
 
-        return intervals
+        return intervals, tg.tiers[0].name
 
 if __name__ == "__main__":
      recorder = TextGridRecorder()

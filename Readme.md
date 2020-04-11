@@ -1,6 +1,6 @@
 # PyPraat
 
-      A praat like python tool specially adapted for keyword clipping.
+      A [praat](http://www.fon.hum.uva.nl/praat/) like python tool specially adapted for keyword clipping.
 ---------------------
 
 ## Requirement
@@ -23,7 +23,8 @@
     *   b : go to last item；
     *   s : add a new time interval edge；
     *   d : delete a time interval； 
-    *   r  : backtrack an operation 。
+    *   r  : backtrack an operation .
+    *   a  : bypass/ undo bypass.
 
 ## To Do
 
