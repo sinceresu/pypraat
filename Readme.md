@@ -1,12 +1,14 @@
 # PyPraat
 
-      A [praat](http://www.fon.hum.uva.nl/praat/) like python tool specially adapted for keyword clipping.
+ A  [praat](http://www.fon.hum.uva.nl/praat) like keyword clipping python tool  for short audio wav.
 ---------------------
 
 ## Requirement
 
+```
       sudo apt-get install libasound-dev
       pip install -r requirements.txt
+```
 
 ## Features
 
