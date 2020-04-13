@@ -22,6 +22,7 @@ import scipy.io.wavfile as wav
 from textgrid_recorder import TextGridRecorder
 from plotter import Plotter
 
+
 class FileItem() :
     def __init__(self,  file_path,  command = None  ) :
         self.file_path = file_path
@@ -33,7 +34,8 @@ class Pypraat(object) :
         'clipped',
         'unclipped',
         'bypassed',
-        ''
+        'wrong',
+        '(none)'
     ] 
 
     search_labels =[  'All' ] + statuses
@@ -62,7 +64,7 @@ class Pypraat(object) :
         screen_width, screen_height = self.root.winfo_screenwidth(), self.root.winfo_screenheight()
         self.root.geometry('%dx%d+%d+%d' % (screen_width, screen_height, 0, 0))
 
-        Button(self.root,text='open folder',command=self.on_select_src_folder, height = 2).grid(column=0, row=0, padx=20, pady=8)
+        Button(self.root,text='open folder',command=self.on_select_src_folder, width = 20, height = 2).grid(column=0, row=0, padx=20, pady=8)
 
         self.src_folder_ctrl = StringVar()
         self.src_folder_ctrl.set(init_src_data_folder)
@@ -102,15 +104,22 @@ class Pypraat(object) :
         self.tree.bind("<<TreeviewSelect>>",  self.on_select_item)
         self.root.bind("<KeyPress-space>",  self.on_confirm_and_next)
         self.root.bind("<KeyPress-f>",  self.on_play)
+        self.root.bind("<KeyPress-F>",  self.on_play)
         self.root.bind("<KeyPress-p>",  self.on_play)
+        self.root.bind("<KeyPress-P>",  self.on_play)
         self.root.bind("<KeyPress-b>",  self.on_go_prev) 
+        self.root.bind("<KeyPress-B>",  self.on_go_prev) 
         self.root.bind("<KeyPress-s>",  self.on_set_zone_pressed)
+        self.root.bind("<KeyPress-S>",  self.on_set_zone_pressed)
         self.root.bind("<Return>",  self.on_set_zone_pressed)
         self.root.bind("<Tab>",  self.on_play)
         self.root.bind("<Delete>",  self.on_delete_timezone)
         self.root.bind("<KeyPress-d>",  self.on_delete_timezone)
+        self.root.bind("<KeyPress-D>",  self.on_delete_timezone)
         self.root.bind("<KeyPress-r>",  self.on_revert)
+        self.root.bind("<KeyPress-R>",  self.on_revert)
         self.root.bind("<KeyPress-a>",  self.on_bypass)
+        self.root.bind("<KeyPress-A>",  self.on_bypass)
 
         # self.root.bind("<Space>",  self.on_rename)
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
@@ -146,14 +155,14 @@ class Pypraat(object) :
         # Button(self.root,text='rename',command=self.on_rename, width = 10,  height = 2).grid(column=4, row=4, padx=20, pady=8)
 
 
-        Button(self.root,text='go to first',command=self.on_select_first, width = 10,  height = 2 ).grid(column=5, row=2, padx=20, pady=30)
-        Button(self.root,text='go to last',command=self.on_select_last, width = 10,  height = 2).grid(column=6, row=2, padx=20, pady=30)
+        Button(self.root,text='go to first',command=self.on_select_first, width = 10,  height = 2 ).grid(column=5, row=2, padx=10, pady=30)
+        Button(self.root,text='go to last',command=self.on_select_last, width = 10,  height = 2).grid(column=6, row=2, padx=10, pady=30)
         
         # Button(self.root,text='prev',command=self.on_prev_item, width = 10,  height = 2 ).grid(column=7, row=4, padx=20, pady=8)
         # Button(self.root,text='next',command=self.on_next_item, width = 10,  height = 2).grid(column=8, row=4, padx=20, pady=8)
         self.process_progress = StringVar()
         self.process_progress.set('')
-        Label(self.root, textvariable=self.process_progress).grid(column=7, row=2, columnspan = 3, pady=30)   
+        Label(self.root, textvariable=self.process_progress).grid(column=7, row=2, columnspan = 3, padx=0, pady=30)   
         for row in range(self.root.grid_size()[1]):
             self.root.grid_rowconfigure(row, minsize=60)
         if init_src_data_folder :
@@ -207,7 +216,11 @@ class Pypraat(object) :
         self.first_unprocessed_file_id = first_unprocessed_file_id
 
     def draw_wav_data(self, file_path, time_zones = None):
-        fs, audio_data = wav.read(file_path)
+        try:
+            fs, audio_data = wav.read(file_path)
+        except :
+            print("can not read {}".format(file_path))
+            return
 
         self.plotter_.plot(os.path.basename(file_path), audio_data, fs, time_zones)
 
@@ -219,7 +232,7 @@ class Pypraat(object) :
         if (status_seach_info != 'All') :
             for i in range(len(self.file_items)):
                 # pass
-                status = self.file_items[i].command['status'] if self.file_items[i].command != None else ''
+                status = self.file_items[i].command['status'] if self.file_items[i].command != None else '(none)'
                 display_filter[i] = status_seach_info  ==  status
 
         self.display_files(display_filter)
@@ -245,9 +258,13 @@ class Pypraat(object) :
     #     self.update_view()      
 
     def on_confirm_and_next(self, *args):
-        self.on_confirm(*args)
+        selected_file_id = self.get_selected_item()
+        if selected_file_id is None :
+            return 
+        self.confirm_file(selected_file_id)
+
         self.tree.yview_scroll(1, what='unit')
-        self.goto_next_item()
+        self.goto_next_item(selected_file_id)
 
     def on_go_prev(self, *args):
         self.goto_prev_item()
@@ -266,21 +283,9 @@ class Pypraat(object) :
         new_item_value = (item_value[0], status,  item_value[2])
         self. tree.item(str(selected_file_id), values=(new_item_value))
 
-        # file_to_bypass = self.file_items[selected_file_id].file_path
-        self.file_items[selected_file_id].command["status"] =  status
-
-        # os.remove(file_to_delete)
-        time_zones = self.plotter_.get_timezones()
-        textgrid_file_path =os.path.splitext(self.file_items[selected_file_id].file_path)[0] + '.textgrid'
-        recorder = TextGridRecorder()
-        recorder.write_textgrid(textgrid_file_path, time_zones, status)
-
-
-        if selected_file_id == self.first_unprocessed_file_id :
-            self.find_next_unprocessed_item()
-
+        self.confirm_file(selected_file_id)
         self.tree.yview_scroll(1, what='unit')
-        self.goto_next_item()
+        self.goto_next_item(selected_file_id)
 
     def find_next_unprocessed_item(self) :
         i = self.first_unprocessed_item_id + 1
@@ -295,17 +300,14 @@ class Pypraat(object) :
             self.first_unprocessed_file_id = None
             self.first_unprocessed_item_id = None
 
-    def on_confirm(self, *args):
-
-        time_zones = self.plotter_.get_timezones()
-        selected_file_id = self.get_selected_item()
-        if selected_file_id is None :
-            return 
+    # def add_new_item(self, selected_file_id, status, time_zones) :
+    def  confirm_file(self, selected_file_id) :
 
         if not self.file_items[selected_file_id].command :
             self.processed_items += 1
 
         item_value = self.tree.item(str(selected_file_id),"values")
+        time_zones = self.plotter_.get_timezones()
 
         # self.file_items[selected_file_id].raw_label = selected_label      
         status = 'clipped' if len(time_zones) > 1 else 'unclipped'
@@ -320,8 +322,7 @@ class Pypraat(object) :
 
         textgrid_file_path =os.path.splitext(self.file_items[selected_file_id].file_path)[0] + '.textgrid'
 
-        recorder = TextGridRecorder()
-        recorder.write_textgrid(textgrid_file_path, time_zones, status)
+        TextGridRecorder.write_textgrid(textgrid_file_path, time_zones, status)
 
         self.file_items[selected_file_id].command = {"status": status, 'timezones':time_zones}
 
@@ -329,6 +330,13 @@ class Pypraat(object) :
             self.find_next_unprocessed_item()
 
         self.update_progress()
+
+    def on_confirm(self, *args):
+
+        selected_file_id = self.get_selected_item()
+        if selected_file_id is None :
+            return 
+        self.confirm_file(selected_file_id)
 
     def on_select_first(self, *args):
 
@@ -375,7 +383,7 @@ class Pypraat(object) :
 
     #     self.goto_prev_item()
 
-    def  goto_next_item(self) :
+    def  goto_next_item(self, selected_file_id) :
 
         selected_file_id = self.get_selected_item()
         if selected_file_id is None :
@@ -391,7 +399,7 @@ class Pypraat(object) :
     # def on_next_item(self, *args):
     UPDATE_PROGRESS_INTERVAL = 0.2
     UPDATE_PROGRESS_INTERVAL_MS = int(UPDATE_PROGRESS_INTERVAL * 1000)
-    #     self.goto_next_item()
+
     def update_play_progress(self) :
         self.play_time  += Pypraat.UPDATE_PROGRESS_INTERVAL
         if self.play_time < self.play_end_time - 0.1 :
@@ -405,6 +413,12 @@ class Pypraat(object) :
             self.root.after_cancel(self.progress_timer)
         sa.stop_all()
              
+        try:
+            fs, audio_data = wav.read(wave_file)
+        except :
+            print("can not read {}".format(wave_file))
+            return     
+
         play_zone = self.plotter_.get_play_time_zone()
         
         fs, audio_data = wav.read(wave_file)
@@ -493,15 +507,26 @@ class Pypraat(object) :
         textgrid_files = TextGridRecorder.find_textgrid(data_dir)
         if not textgrid_files :
             return None
-
-        recorder = TextGridRecorder()
-
+        known_statuses = [
+            'bypassed', 
+            'clipped' ,
+            'unclipped', 
+            'wrong' ,       
+        ]
         records_map = {}
         for textgrid_file in textgrid_files :
-            time_zones, tier_name = recorder.read_textgrid(textgrid_file)
+            time_zones, status = TextGridRecorder.read_textgrid(textgrid_file)
             wav_file_path =os.path.splitext(os.path.basename(textgrid_file))[0]
-            status = 'clipped' if len(time_zones) > 1 else 'unclipped'
-            status = 'bypassed' if tier_name == 'bypassed' else status
+            if status not in known_statuses:
+                if len(time_zones) == 1 :
+                    status = 'unclipped'
+                elif  len(time_zones)%2 == 0 :
+                    status = 'wrong' 
+                else :
+                    status = 'clipped'
+                  
+            # status = 'clipped' if len(time_zones) > 1 else 'unclipped'
+            # status = 'bypassed' if tier_name == 'bypassed' else status
             records_map[wav_file_path] = {'status': status, 'timezones':time_zones} 
 
         return records_map
@@ -526,6 +551,8 @@ class Pypraat(object) :
         self.file_items = []
 
         records_map = self.load_status(data_dir) 
+
+        file_paths.sort()
 
         for file_path in file_paths :
             if records_map :

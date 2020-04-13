@@ -105,8 +105,8 @@ class Plotter(object):
         yaxis_array = np.arange(pcen.shape[1] + 1)
         axes.pcolormesh(xaxis_array, yaxis_array, np.transpose(pcen))
 
-        axes.set_xlim(self.xlim)
-        # axes.set_title('Specgram')
+        #axes.set_xlim(self.xlim)
+        #axes.set_title('Specgram')
 
 
     def plot_time_zone(self, time_zone_selected = False) :

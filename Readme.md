@@ -1,6 +1,6 @@
 # PyPraat
 
- A  [praat](http://www.fon.hum.uva.nl/praat) like keyword clipping python tool  for short audio wav.
+A  [praat](http://www.fon.hum.uva.nl/praat) like keyword clipping python tool  for short audio wav.
 ---------------------
 
 ## Requirement

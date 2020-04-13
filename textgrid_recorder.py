@@ -3,7 +3,8 @@ import datetime
 import os
 
 import textgrid
-# from praatio import tgio
+from praatio import tgio
+import argparse
 
 from global_defs import TimeZone
 
@@ -22,7 +23,8 @@ class TextGridRecorder(object) :
                         textgrid_files.append(filename_path) 
             return textgrid_files
 
-    def write_textgrid(self,  file_path, time_zones,  tier_name = 'registered') :
+    @staticmethod
+    def write_textgrid(file_path, time_zones,  tier_name = 'clipped') :
         tg = textgrid.TextGrid()
         tier = textgrid.IntervalTier(tier_name)
         for i, time_zone in enumerate(time_zones) :
@@ -30,19 +32,31 @@ class TextGridRecorder(object) :
         tg.append(tier)
         tg.write(file_path)
 
-    def read_textgrid(self,  file_path) :
+    @staticmethod
+    def read_textgrid(file_path) :
         tg = textgrid.TextGrid()
         try:
             tg.read(file_path)
         except :
-            return None
-            # tg = tgio.openTextgrid(file_path)
-            # if len(tg.tierDict["Keyword"].entryList) != 1 :
-            #     return [(0,  tg.tierDict["Keyword"].maxTimestamp * 1000)]
-            # start =  int(tg.tierDict["Keyword"].entryList[0].start* 1000)
-            # end =  int(tg.tierDict["Keyword"].entryList[0].end * 1000)
+            # return None
+            tg = tgio.openTextgrid(file_path)
+            if len(tg.tierDict["Keyword"].entryList) < 1 :
+                intervals = [TimeZone(0,  tg.tierDict["Keyword"].maxTimestamp)]
+                return intervals, "kws"
 
-            # return [(0, start), (start, end), (end, tg.tierDict["Keyword"].maxTimestamp * 1000)]
+            intervals = []
+            latest_end = 0
+            max_time =  tg.tierDict["Keyword"].maxTimestamp
+            for entry in tg.tierDict["Keyword"].entryList :
+                start =  entry.start
+                end =  entry.end
+                end = min(end, max_time - 0.001)
+                intervals.extend([TimeZone(latest_end, start), TimeZone(start, end)])
+                latest_end = end
+
+            intervals.append(TimeZone(latest_end, max_time))
+
+            return intervals, "kws"
         intervals = []
         for item in tg.tiers[0] :
             #convert to ms
@@ -52,10 +66,9 @@ class TextGridRecorder(object) :
         return intervals, tg.tiers[0].name
 
 if __name__ == "__main__":
-     recorder = TextGridRecorder()
      input_time_zones = [TimeZone(0, 2.0), TimeZone(2.0, 4.0)]
-     recorder.write_textgrid('test.textgrid', input_time_zones)
-     output_time_zones = recorder.read_textgrid('test.textgrid')
+     TextGridRecorder.write_textgrid('test.textgrid', input_time_zones)
+     output_time_zones = TextGridRecorder.read_textgrid('test.textgrid')
      assert(len(output_time_zones) == len(input_time_zones))
      for input_time_zone , output_time_zone in zip(input_time_zones, output_time_zones) :
         assert(input_time_zone.start == output_time_zone.start and input_time_zone.end == output_time_zone.end)
