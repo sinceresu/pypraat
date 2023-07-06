@@ -4,4 +4,4 @@ librosa==0.7.0
 TextGrid==1.4
 python_speech_features==0.6
 matplotlib==3.0.3
-scipy==1.2.1
+scipy==1.10.0
